@@ -29,6 +29,17 @@ from .types import (
 
 logger = logging.getLogger(__name__)
 
+def apple_artist_join(artists):
+    """Joins artist names in Apple Music style."""
+    if isinstance(artists, str):
+        return artists
+    if len(artists) == 1:
+        return artists[0]
+    elif len(artists) == 2:
+        return f"{artists[0]} & {artists[1]}"
+    else:
+        return f"{', '.join(artists[:-1])} & {artists[-1]}"
+
 
 class AppleMusicSongInterface(AppleMusicInterface):
     def __init__(self, interface: AppleMusicInterface):
@@ -175,9 +186,12 @@ class AppleMusicSongInterface(AppleMusicInterface):
     ) -> MediaTags:
         webplayback_metadata = webplayback["songList"][0]["assets"][0]["metadata"]
 
+        album_artist_raw = webplayback_metadata.get("playlistArtistName")
+        album_artist = apple_artist_join(album_artist_raw)
+
         tags = MediaTags(
             album=webplayback_metadata["playlistName"],
-            album_artist=webplayback_metadata["playlistArtistName"],
+            album_artist=album_artist,
             album_id=int(webplayback_metadata["playlistId"]),
             album_sort=webplayback_metadata["sort-album"],
             artist=webplayback_metadata["artistName"],
@@ -214,6 +228,7 @@ class AppleMusicSongInterface(AppleMusicInterface):
             track_total=webplayback_metadata["trackCount"],
             xid=webplayback_metadata.get("xid"),
         )
+        logger.debug(f"Album artist tag value: '{album_artist}'")
         logger.debug(f"Tags: {tags}")
 
         return tags
